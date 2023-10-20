@@ -20,11 +20,11 @@ void showSuper(frame FrameDown, frame FrameUp){
 	y = (FrameDown.height/2) - (FrameUp.height/2);
 
 	finalX = (x + FrameUp.width);
-	finalY = (y + FrameUp.height)-1;
+	finalY = (y + FrameUp.height);
 
 	for(int i=0; i < FrameDown.height; i++){
 		for(int j=0; j < FrameDown.width; j++){
-			if(j >=x && j < finalX && i >=y && y < finalY && FrameUp.image[posUp]){
+			if(j >=x && j < finalX && i >=y && y < finalY&& posUp < FrameUp.width * FrameUp.height){
 				printf("%c",FrameUp.image[posUp]);
 				posUp++;
 			}
