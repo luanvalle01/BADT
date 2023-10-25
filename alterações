@@ -1,0 +1,14 @@
+criado frameInsert 100% funcional.
+implementado freeFrame para liberar alocamentos dinâmicos do frame.
+
+Criada a estrutura de tabelas, juntamente ao seu construtor.
+Criado tableSetup, permitindo a criação de tabelas de maneira dinâmica
+Implementada função para atualizar coluna da tabela.
+Implementado freeTable para liberar alocamentos dinâmicos da tabela.
+Criada função para inserir tabela em frame (Cabeçalho e tabelas lado a lado 100% funcional);
+ 
+Primeiros testes de frameCopy (ainda infuncional)
+
+REVISAR CÓDIGO
+AJUSTAR FREE'S
+COMPLETAR FUNÇÃO DE ATUALIZAR COLUNA
