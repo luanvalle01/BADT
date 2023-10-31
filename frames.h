@@ -1,16 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
+#include "suportFunctions.h"
 
 /************************/
 /*     ESTRUTURA        */
 /************************/
-typedef struct{
-	int width, height;
-	char *image;
-	char *title;
-	char border;
-}frame;
-
 typedef struct{
 	int width, height;
 	char *image;
@@ -20,10 +14,39 @@ typedef struct{
 
 }table;
 
+typedef struct{
+	int width, height;
+	char *image;
+	char *title;
+	char border;
+	
+	table Table;
+}frame;
+
 /************************/
 /*   PROTOTIPAGEM       */
 /************************/
-table constructorTable(table *Table,char *subTitles);
+//Setup
+frame frameSetup(char *title,char border ,int width, int height);
+void tableSetup(table *Table, char *subTitles,char *colWidth);
+
+//Construtores
+void constructorLine(frame Frame, int line, char *text);
+void constructorWindow(frame Frame);
+void freeFrame(frame Frame);
+
+void constructorTable(table *Table,char *subTitles);
+void freeTable(table Table);
+
+//Editores
+frame frameCopy(frame frameOrigin);
+frame frameResize(frame *Frame,int newWidth,int newHeight);
+void frameInsert(frame *Frame,char *text,int x,int y);
+void frameInsertTable(frame *Frame,table Table,int x,int y);
+void frameRefresh(frame *Frame);
+
+void refreshCol(table *Table,int col,char type,void *values, int qtdValues);
+void refreshTable(table *Table);
 
 frame frameSetup(char *title,char border ,int width, int height){
 	frame Frame;
@@ -38,33 +61,42 @@ frame frameSetup(char *title,char border ,int width, int height){
 	strcpy(Frame.title,title);
 	Frame.border = border;
 
+	Frame.Table.image = (char *)malloc(1);
+	Frame.Table.image[0] = '\0';
+
+	constructorWindow(Frame);
+
 	return Frame;
 }
 
 //_____________//
 
-table tableSetup(table Table, char *subTitles,char *colWidth){
-	//"50,10,30"
+void tableSetup(table *Table, char *subTitles,char *colWidth){
+	int count = 0;
 	int sizeSubTitles = 0;
 	int sizeColBuffer = 0;
 	
-	int sizeText = strlen(colWidth), cursor = 0,qtdCol = 1;
+	int sizeText = strlen(colWidth), cursor = 0,qtdCol = 2;
 	char *buffer = (char *)malloc(sizeText);
 	
-	Table.width = 0;
-	Table.height = 2;
+	Table->width = 0;
+	Table->height = 2;
 
-	sizeSubTitles = strlen(subTitles);
+	sizeSubTitles = strlen(subTitles)+1;
+	Table->titles = (char *)malloc(sizeSubTitles);
 
-	for(int i = 0;i < sizeSubTitles;i++){
-		if(subTitles[i] == ',')
+	for(count = 0;count < sizeSubTitles;count++){
+		Table->titles[count] = subTitles[count];
+		if(Table->titles[count] == ',')
 			qtdCol++;
 	}
 	
-	Table.colWidth = (int *)malloc(qtdCol);
-	Table.qtdCol = qtdCol;
+	Table->titles[count+1] = '\0';
+	
+	Table->colWidth = (int *)malloc(qtdCol);
+	Table->qtdCol = qtdCol;
 
-	for(int i = 0;i < Table.qtdCol;i++){
+	for(int i = 0;i < Table->qtdCol;i++){
 		for(int j = 0;j < sizeText;j++){
 			if(colWidth[cursor] != ','){
 				buffer[j] = colWidth[cursor];
@@ -72,9 +104,10 @@ table tableSetup(table Table, char *subTitles,char *colWidth){
 			}
 			else{
 				buffer[j] = '\0';
-				Table.colWidth[i] = atoi(buffer) +1;
-				Table.width += Table.colWidth[i];
-				printf("tamanho coluna: %d \n",Table.colWidth[i]);
+				Table->colWidth[i] = atoi(buffer) +1;
+				Table->width += Table->colWidth[i];
+				printf("tamanho coluna: %d \n",Table->colWidth[i]);
+
 				cursor++;
 				break;
 			}
@@ -82,9 +115,8 @@ table tableSetup(table Table, char *subTitles,char *colWidth){
 		}
 	}
 	
-	Table  = constructorTable(&Table, subTitles);
+	constructorTable(Table, subTitles);
 
-	return Table;
 }
 
 /************************/
@@ -115,8 +147,8 @@ void constructorWindow(frame Frame){
 	for(j; j < Frame.width; j++){
 		Frame.image[j] = '=';
 		if(j >= xTitle &&  j < xTitleFinal){
-			Frame.image[j] = Frame.title[cursor];
-			cursor++;
+
+			Frame.image[j] = Frame.title[cursor++];
 		}
 	}
 
@@ -142,15 +174,34 @@ void freeFrame(frame Frame){
 
 //_____________//
 
-table constructorTable(table *Table,char *subTitles){
+void constructorTable(table *Table,char *subTitles){
 	//Cria uma tabela com os títulos das colunas já inseridos
 	//"Nome,Idade,Estado"
 
 	//A altura inicial é 0(sem contar sub títulos);
 	int cursor = 0, cursorSubTitles = 0, sizeColBuffer = 0, emptySize = 0, i = 0, j = 0;
-
+	int subTitlesSize = strlen(subTitles);
 	int imageSize = (Table->width * Table->height) +Table->qtdCol;
-	Table->image = (char *)malloc(imageSize);
+	Table->image = (char *)realloc(Table->image,imageSize);
+	
+	for(i = 0; i < Table->qtdCol; i++){
+		sizeColBuffer = 0;
+	
+		for(j = 0; j < subTitlesSize; j++){
+			if(subTitles[cursorSubTitles++] != ',' && subTitles[cursorSubTitles])
+				sizeColBuffer++;
+			else 
+				break;
+		}
+		if(sizeColBuffer > Table->colWidth[i]){
+			Table->colWidth[i] = sizeColBuffer +1;
+			sizeColBuffer = 0;
+			refreshTable(Table);
+			return;
+		}
+	}
+
+	cursorSubTitles = 0;
 
 	for(i = 0;i < Table->qtdCol;i++){
 		for(j = 0;j < Table->colWidth[i]; j++){
@@ -166,8 +217,6 @@ table constructorTable(table *Table,char *subTitles){
 	
 	for(int i = 0;i < Table->width;i++)
 		Table->image[cursor++] = '-';
-
-	return *Table;
 }
 
 void freeTable(table Table){
@@ -272,11 +321,15 @@ void frameInsertTable(frame *Frame,table Table,int x,int y){
 	free(buffer);
 }
 
+void frameRefresh(frame *Frame){
+	if(Frame->Table.image[0] != '\0')
+		frameInsertTable(Frame,Frame->Table,0,0);
+	//Acrescentar Rodapé
+}
+
 //_____________//
 
-
-
-table refreshCol(table Table,int col,char *type,void *values, int qtdValues){
+void refreshCol(table *Table,int col,char type,void *values, int qtdValues){
 	//Limpa todos os valores da coluna
 	//Escreve os valores passados
 
@@ -285,16 +338,29 @@ table refreshCol(table Table,int col,char *type,void *values, int qtdValues){
 	//numeros[5] = {1,2,3,4,5}
 	//tabela = refreshCol(tabela,'i',numeros,5)
 	
-	int i = 0,j = 0,cursor = (Table.width*2) +Table.colWidth[col];
-	char *buffer = (char *)malloc(Table.colWidth[col]);
+	int i = 0,j = 0,cursor = (Table->width*2), sizeBuffer = 0;
+	char *buffer = (char *)malloc(Table->colWidth[col]);
+	char *tempString = (char *)values;
+	int stop = 0;
 	
-	if(Table.height < qtdValues+2)
-		Table.height = qtdValues+2;
+	sizeBuffer = sizeofStr(tempString,'|');
 	
-	Table.image = (char *)realloc(Table.image,Table.width*Table.height);
+	for(i = 0; i < col; i++)
+		cursor +=  Table->colWidth[i];
+	
+	for(i = 0;i < Table->colWidth[col];i++)
+		buffer[i] = ' ';
+		
+	buffer[i-1] = '\0';
+	
+	
+	if(Table->height < qtdValues+2)
+		Table->height = qtdValues+2;
+	
+	Table->image = (char *)realloc(Table->image,Table->width*Table->height);
 	
 	//Limpar Tabela e adiciona valores
-	for(i = 2;i < Table.height;i++){
+	for(i = 2;i < Table->height;i++){
 		if(strcmp(type,"%d") == 0 || strcmp(type,"%i") == 0){
 			int *temp = (int *)values;
 			sprintf(buffer,"%d",temp[0]);
@@ -308,16 +374,57 @@ table refreshCol(table Table,int col,char *type,void *values, int qtdValues){
 			strcpy(buffer,*temp[i-2]);
 		}
 		
-		for(j = 0;j < Table.colWidth[col]-1;j++){
-			Table.image[cursor++] = ' ';
+		Table->image[cursor++] = ' ';
+		stop = 0;
+		
+		for(j = 0;j < Table->colWidth[col]-2;j++){
+			Table->image[cursor] = ' ';
+			if(buffer[j] && !stop)
+				Table->image[cursor] = buffer[j];
+			else
+				stop = 1;
+			
+			cursor++;
+		}
+		if(col < Table->qtdCol-1)
+			Table->image[cursor] = ':';
+		cursor++;
+		
+		cursor += Table->width - Table->colWidth[col];
+	}
+
+}
+
+void refreshTable(table *Table){
+	int i = 0;
+	char *buffer = (char *)malloc(100);
+	char *colWidths = (char *)malloc(100);
+	
+	
+	for(i = 0; i < Table->qtdCol; i++){
+		sprintf(buffer,"%d",Table->colWidth[i]);
+		
+		if(!i){
+			strcpy(colWidths,buffer);
+			strcat(colWidths,",");
+		}
+		else{
+			strcat(colWidths,buffer);
+			if(i < Table->qtdCol-1)
+		 		strcat(colWidths,",");
+		 	else
+		 		strcat(colWidths,"\0");
 		}
 		
-		for(j = Table.colWidth[col]-1;j > -1;j--){
-			Table.image[cursor--] = buffer[j];
-		}
+		
 	}
-			
-	return Table;	
+	
+	colWidths = (char *)realloc(colWidths,strlen(colWidths));
+	printf("%s\n",colWidths);
+	printf("%s\n",Table->titles);
+	tableSetup(Table,Table->titles,colWidths);
+	
+	free(buffer);
 }
 
 
@@ -327,30 +434,53 @@ table refreshCol(table Table,int col,char *type,void *values, int qtdValues){
 /*(Provisório p/ testes)*/
 /************************/
 frame frames(int frameID){
-	frame Frame = frameSetup("NONE",'|',1,1);
+	frame Frame = frameSetup("TITULO",'|',10,5);
 
 	switch(frameID){
 		case 0:
-			Frame = frameSetup("POP UP",'!',10,3);
-			constructorWindow(Frame);
-
-			Frame = frameResize(&Frame,20,4);
+			Frame = frameSetup("POP UP",'!',20,3);
+			
+			frameInsert(&Frame,"Testando pop up",Frame.width/2-9,Frame.height/2-1);
+			frameRefresh(&Frame);
 			break;
 		case 1:
-			Frame = frameSetup("JANELA",'|',20,4);
-			constructorWindow(Frame);
 
-			table Table;
-			Table = tableSetup(Table,"Nome,Idade,Endereco,CEP","15,5,10,5");
-
-			Frame = frameResize(&Frame,10,5);
+			tableSetup(&Frame.Table,"Nome,Idade,Endereco,Dinheiros","15,1,10,15");
+			//Frame = frameResize(&Frame,10,5);
 			
+			char nomes[5][50];
+			//cleanStr((char *)nomes,' ',5*50);
+			strcpy(nomes[0],"|Pablo Fernando\0");
+			strcpy(nomes[1],"|Roberto Carlos\0");
+			strcpy(nomes[2],"|Jacinto Pinto\0");
+			strcpy(nomes[3],"|Tomas Turbando\0");
+			strcpy(nomes[4],"|Paula Tejando\0");
 			
-			int test[] = {5,1,3,4,8};
-			refreshCol(Table,0,"%d",test, 5);
+			int idades[] = {18,10,34,39,26};
+			
+			char enderecos[5][50];
+			//cleanStr((char *)enderecos,' ',5*50);
+			strcpy(enderecos[0],"|Rua das Casas, 123\0");
+			strcpy(enderecos[1],"|Rua dos Moradores, 321\0");
+			strcpy(enderecos[2],"|Beco do Batman, 100\0");
+			strcpy(enderecos[3],"|Casa da Mae Joana, 5\0");
+			strcpy(enderecos[4],"|Beto Carreiro, 97123\0");
+			
+			float dinheiros[] = {99.10,10.15,1234.71,39,0};
+			
+			Frame.Table.colWidth[0] = biggestStr(nomes,'s',5);
+			Frame.Table.colWidth[1] = biggestStr(idades,'d',5);
+			Frame.Table.colWidth[2] = biggestStr(enderecos,'s',5);
+			Frame.Table.colWidth[3] = biggestStr(dinheiros,'f',5);
+			
+			refreshTable(&Frame.Table);
+			
+			refreshCol(&Frame.Table,0,'s',nomes, 5);
+			refreshCol(&Frame.Table,1,'d',idades, 5);
+			refreshCol(&Frame.Table,2,'s',enderecos, 5);
+			refreshCol(&Frame.Table,3,'f',dinheiros, 5);
 
-			frameInsertTable(&Frame,Table,0,0);
-			frameInsertTable(&Frame,Table,Table.width,0);
+			frameRefresh(&Frame);
 			break;
 	}
 	return  Frame;
