@@ -1,0 +1,194 @@
+--09 de Novembro de 2023--
+🧭️Visão geral:
+	✅️Estrutura de imagens completamente funcinal.
+	✅️Estrutura de frames primitivos completamente funcional.
+	✅️Frames "menu" completamente funcionais.
+	
+	🗓️Próximas atividades:
+		•Criar estrutura de tabelas.
+		•Criar modo "table" para frames.
+		 >Implementar métodos construtores.
+		•Criar modo "input" para frames.
+		 >será armazenado em frame.inputBuffer e terá um limite de caracteres definido pelo desenvolvedor.
+		•Criar modo "form" para frames.
+		 >Estrutura semelhante a menu, onde cada linha representa uma característica a ser cadastrada.
+		 >Relação direta com a tabela atribuída.
+
+🗺️Alterações no escopo:
+	•⚠️Recomendação: para alterar estado do programa, getch() pode ser comparado com 10(decimal de enter).
+	•⚠️Internamente, os modos são reconhecidos apenas pela primeira letra de seu nome.
+	•Program terá variável breaK, para indicar finalização do programa.
+	•Existirão protótipos de métodos para serem definidos pelo desenvolvedor:
+		>programUpdadte - chamado uma vez a cada tick.
+		>programFUpdate - chamado a cada x intervalos de tempo.
+	•Adicionado msCounter e msUpdate em program para funcionar em conjunto com programFUpdate.
+	•msUpdate inicia em 16ms.
+	•⚠️getch (multOS) adicionado ao projeto (fonte devidamente creditada)
+	
+🚧️Alterações em str.h:
+	•Definido constante true = 1.
+	•Definido constante false = 0.
+	•Criado strCat. (necessita de realloc externo)
+	
+🚧️Adições em frames.h:
+	•Adicionado char *options na estrutura de frames. 100% funcioal
+		>"opcao1|opcao2|".
+	•Adicionado int qtdOptions na estrutura de frames.
+	
+	•frameSetCursor agora é 100% funcional.
+	
+	•Implementado frameInsert - 100% funcional.
+	•frameInsertCenter - 100% funcional.
+	•Criado frameInsertOption - escreve próxima opção.
+	•Criado frameCleanOption - remove todas opções.
+	•frameCursorAdd adicionado.
+	•frameCursorSub adicionado.
+	•⚠️Dinâmica de opção selecionada funcional.
+		>Todo frame do modo "menu" armazena a posição atualmente selecionada.
+	
+	•frameRefresh obsoleto. (preservado para possível uso)
+	•frameFree 100%
+	
+	•Bug no frame insert após inserir opções solucionado.
+	•Bug no frame insert center que sobreescrevia última atualização solucionado.
+
+
+===========================================================	
+--01 de Novembro de 2023--(reset do projeto...)
+
+◈Construída a estrutura de Image, com as seguintes funções:
+	•void imageSetup(Image *image, int width, int height, char _realoc);
+	
+	•void imageShow(Image *image);
+	
+	•void imageClean(Image *image);
+	•void imageCopy(Image *imageDestiny,Image  *imageOrigin, int x, int y);
+	•void imageResize(Image *image, int newWidth, int newHeight);
+	
+	•void imageInsert(Image *image, char *string, int x, int y);
+	
+	•void freeImage(Image *image);
+	
+◈Com base em imagem, criada a estrutura de Frame, com as seguintes funções:
+	•void frameSetup(Frame *frame, char *title, int width, int height, char _realloc);
+	•void repairFrame(Frame *frame);
+
+	•void frameSetCursor(Frame *frame, int x, int y);
+
+	•void frameClean(Frame *frame);
+	•void frameCopy(Frame *frameDestiny, Frame *frameOrigin,int x, int y);
+	•void frameResize(Frame *frame, int newWidth, int newHeight);
+
+	//Ainda não implementadas...
+	//void frameSetTable(Frame *frame, Table *table);
+	//void frameSetFooter(Frame *frame, Footer *footer);
+
+	•void frameInsert(Frame *frame,char *string, int x, int y);
+	•void frameRefresh(Frame *frame);
+
+	•void frameFree(Frame *frame);
+
+◈Criado str.h para funções mais específicas de string. contendo os métodos:
+	•int strLen(char *string);
+	•void strCopy(char *strDestiny, char *strOrigin);
+	•void getBiggest(char *string, int *bigLen);
+	
+!frameResize ainda infuncional!
+
+🎯Próximos passos:
+ •Criar estrutura de rodapé:
+  >será a última impressão no frame.
+  >exibe a opção selecionada, pagina atual da tabela(caso haja) e legenda de teclas.
+  
+ •Completar sistema de exibição de frames, permitindo:
+  >entrada com atualização em tempo real. manipulando (char *) da main.
+  >alteração do fluxo do programa por parâmetros do frame.
+  >exibição dinâmica de tabela, com navegação entre páginas.
+  
+ •Organização do código:
+  >identificar e aplicar todos os "frees" de mallocs necessários.
+  >limpar redundâncias.
+  >encapsular funções.
+ 
+===========================================================
+--?? de ??--
+TESTE FALHOU:
+ >Incluído colsPointer na estrutura de tabela para armezenar ponteiros das colunas em int *.
+ >Incluído colsType na estrutura de tabela para armazenar a tipagem de cada coluna em void *.
+ .TENTAR:
+  >Armazenar ponteiros em uma string buffer e criar funções para add ponteiros e limpar lista.
+ 
+Criada função de atribuir ponteiro à coluna da tabela.
+
+RefreshCol redesenhada para ser mais intuitiva.
+ >agora também ajusta automaticamente a largura da coluna.
+tableSetup redesenhado para ser mais intuitivo.
+ >Agora armazena subTitles completamente.
+FrameSetup agora cria a janela automaticamente.
+criado frameRefresh para atualizar o desenho do frame com base nas estruturas internas.
+criado refreshTable.
+ >reajusta largura das colunas, sendo a largura mínima o tamanho do sub título.
+adicionado biggestStr à suportFunctions.
+ >suporta diferentes tipos
+
+--26 de Outubro de 2023--
+
+◈Criado frameInsert 100% funcional.
+◈Criado frameIsertTable 100% funcional.
+
+
+◈Criada a estrutura de tabelas, juntamente ao seu construtor.
+ •criado tableSetup, permitindo a criação de tabelas de maneira dinâmica.
+ •implementada função para atualizar coluna da tabela.(funciona para int, .2float e str).
+ •criada função para inserir tabela em frame (Cabeçalho e tabelas lado a lado 100% funcional).
+ •implementado freeTable para liberar alocamentos dinâmicos da tabela.
+ 
+◈Demais adições
+ •implementado freeFrame para liberar alocamentos dinâmicos do frame.
+ •primeiros testes de frameCopy (ainda infuncional).
+ 
+✅Concluído:
+ •Consrução de sistema intuitivo para edição do layout do frame.
+ •Construção do sistema de "máscara", que permitirá posicionar informações variáveis em pontos específicos do layout.
+ 
+🎯Próximos passos:
+ •Criar estrutura de rodapé:
+  >será a última impressão no frame.
+  >exibe a opção selecionada, pagina atual da tabela(caso haja) e legenda de teclas.
+  
+ •Completar sistema de exibição de frames, permitindo:
+  >entrada com atualização em tempo real. manipulando (char *) da main.
+  >alteração do fluxo do programa por parâmetros do frame.
+  >exibição dinâmica de tabela, com navegação entre páginas.
+  
+ •Organização do código:
+  >identificar e aplicar todos os "frees" de mallocs necessários.
+  >limpar redundâncias.
+  >encapsular funções.
+  
+===========================================================
+--19 de Outubro de 2023--
+
+◈ConstructorAll obsoleto, substituído por constructorWindow
+ •Utiliza as informações do frame para construir uma janela vazia.
+◈FrameSetSize renomeado para frameSetup.
+ •inicialiador da estrutura, necessita do título, caractere de borda e dimensões.
+◈Estrutura de frame atualizada, acrescentado: title(título do frame), border(borda do frame)
+◈Criado frameResize 100% funcional
+ •basta passar como parâmentro o frame e as novas dimensões.
+ •a memória é realocada dinâmicamente.
+
+🎯Próximos passos:
+ •Construção do sistema de "máscara", que permitirá posicionar informações variáveis em pontos específicos do layout.
+ •Consrução dee sistema intuitivo para edição do layout do frame.
+
+===========================================================
+--17 de Outubro de 2023--
+ 
+◈Criada Estrutura de frames para armazenamento de layouts.
+◈Duas funções para construção de layout implementadas.
+◈Teste de "Base de Frames", o programador pode desenvolver os frames dentro da função, atribuindo o id que será usado posteriormente.
+◈Implementada funções de exibição de frame e exibição de sobreposição de frames.
+
+🎯Próximos passos:
+ •Construção do sistema de "máscara", que permitirá posicionar informações variáveis em pontos específicos do layout.
